@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,13 +11,14 @@ import Link from "next/link";
 import { signIn } from "next-auth/react";
 
 export const LoginForm = () => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [username, setUsername] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
 
   const { toast } = useToast();
-  const handleSubmit = async (e) => {
+
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
@@ -27,13 +28,12 @@ export const LoginForm = () => {
         username,
         password,
       });
-      if (!result.ok) {
+      if (!result?.ok) {
         toast({ title: "Invalid username or password" });
       } else {
-
         toast({
           title: "Login successful",
-        }); // Misol uchun, muvaffaqiyatli login xabari
+        });
         router.push("/app");
       }
     } catch (error) {

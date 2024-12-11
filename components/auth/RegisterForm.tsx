@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,36 +11,37 @@ import Link from "next/link";
 import { signIn } from "next-auth/react";
 
 export const SignUpPage = () => {
-  const [email, setEmail] = useState("");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [email, setEmail] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
   const router = useRouter();
   const { toast } = useToast();
 
-  const handleSubmit = async (e: any) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const result = await signIn("createAccount", {
+      const result = await signIn("create-account", {
         redirect: false,
         username,
         password,
         email,
-      });
-      if (result.error) {
+      });      
+      if (!result || result.error) {
         toast({ title: "Invalid username or password" });
+      } else {
+        toast({
+          title: "Account created successfully. You can now log in.",
+        });
+        router.push("/app");
       }
-
-      // toast({
-      //   title: "Login successful",
-      // }); // Misol uchun, muvaffaqiyatli login xabari
-      // router.push("/dashboard"); // Aslida login qilinganligini tasdiqlashni unutmang
     } catch (error) {
       toast({
         title: "Something went wrong. Please try again.",
       });
+      console.error(error);
     } finally {
       setIsLoading(false);
     }
@@ -117,12 +118,12 @@ export const SignUpPage = () => {
         </Button>
       </form>
       <p className="text-center text-sm text-zinc-500">
-        No account?{" "}
+        Already have an account?{" "}
         <Link
-          href="/sign-up"
+          href="/sign-in"
           className="font-medium text-zinc-950 decoration-zinc-950/20 underline-offset-4 outline-none hover:text-zinc-700 hover:underline"
         >
-          Create an account
+          Sign in
         </Link>
       </p>
     </div>

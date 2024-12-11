@@ -7,6 +7,7 @@ export const authOptions: AuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
+      type: "credentials",
       credentials: {
         username: { label: "Username", type: "text", placeholder: "Username" },
         password: {
@@ -48,7 +49,9 @@ export const authOptions: AuthOptions = {
 
     // Create Account Provider
     CredentialsProvider({
-      name: "createAccount",
+      id: "create-account",
+      name: "create-account",
+      type: "credentials",
       credentials: {
         username: { label: "Username", type: "text", placeholder: "Username" },
         password: { label: "Password", type: "password", placeholder: "Password" },
@@ -99,6 +102,10 @@ export const authOptions: AuthOptions = {
     async session({ session, token }) {
       session.accessToken = token.accessToken as string;
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // Agar `callbackUrl` noto'g'ri bo'lsa, asosiy sahifaga qaytaring
+      return url.startsWith(baseUrl) ? url : baseUrl;
     },
   },
   secret: process.env.NEXTAUTH_SECRET || "your_secret_key",
