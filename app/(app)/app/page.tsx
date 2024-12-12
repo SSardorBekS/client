@@ -1,30 +1,21 @@
 "use client";
 
+import ChatInterface from "@/components/chat-interface";
 import RealTimeSpeechToText from "@/components/speech-section";
-
-import {
-  EditorCommand,
-  EditorCommandEmpty,
-  EditorCommandItem,
-  EditorCommandList,
-  EditorContent,
-  type EditorInstance,
-  EditorRoot,
-  type JSONContent,
-} from "novel";
 
 import { useState } from "react";
 
 export default function AppPage() {
-  const [content, setContent] = useState(null);
+  const [content, setContent] = useState("");
+
+  const startNewEditorBlock = () => {
+    setContent(""); // Clear content when a new block starts
+  };
 
   return (
-    <>
-    <EditorRoot>
-      <EditorContent
-      />
-    </EditorRoot>
-      <RealTimeSpeechToText />
-    </>
-  )
+    <div className="bg-gray-100 min-h-screen flex flex-col">
+      <ChatInterface content={content} setContent={setContent} />
+      <RealTimeSpeechToText onSpeech={setContent} startNewEditorBlock={startNewEditorBlock} />
+    </div>
+  );
 }

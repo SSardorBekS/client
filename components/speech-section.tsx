@@ -4,174 +4,85 @@ import React, { useState, useRef, useEffect } from 'react';
 import { Mic, MicOff, Loader2, AlertCircle } from 'lucide-react';
 import axios from 'axios';
 
-const RealTimeSpeechToText = () => {
-  const [isRecording, setIsRecording] = useState(false);
-  const [transcript, setTranscript] = useState('');
-  const [isConnecting, setIsConnecting] = useState(false);
-  const [error, setError] = useState('');
-  const [newText, setNewText] = useState('');
-  const [sessionId, setSessionId] = useState('');
+// Define types for props
+interface RealTimeSpeechToTextProps {
+  onSpeech: (transcription: string) => void;
+}
+
+const RealTimeSpeechToText: React.FC<RealTimeSpeechToTextProps> = ({ onSpeech }) => {
+  const [isRecording, setIsRecording] = useState<boolean>(false);
+  const [transcript, setTranscript] = useState<string>('');
+  const [isConnecting, setIsConnecting] = useState<boolean>(false);
+  const [error, setError] = useState<string>('');
+  const [newText, setNewText] = useState<string>('');
   
-  const recognition = useRef(null);
-  const mediaRecorderRef = useRef(null);
-  const audioChunksRef = useRef([]);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
 
-  useEffect(() => {
-    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-    
-    if (!SpeechRecognition) {
-      setError('Speech recognition is not supported in this browser.');
-      return;
-    }
-
-    recognition.current = new SpeechRecognition();
-    recognition.current.continuous = true;
-    recognition.current.interimResults = true;
-    recognition.current.lang = 'en-US';
-
-    return () => {
-      stopRecording();
-    };
-  }, []);
-
-  useEffect(() => {
-    if (recognition.current) {
-      recognition.current.onresult = (event) => {
-        const last = event.results.length - 1;
-        const result = event.results[last];
-        const text = result[0].transcript;
-        
-        if (result.isFinal) {
-          setNewText(text);
-          setTranscript(prev => prev + ' ' + text);
-          sendTranscriptionToBackend(text, true);
-        }
-      };
-
-      recognition.current.onerror = (event) => {
-        console.error('Recognition error:', event.error);
-        setError(getErrorMessage(event));
-        stopRecording();
-      };
-
-      recognition.current.onend = () => {
-        if (isRecording) {
-          recognition.current.start();
-        }
-      };
-    }
-  }, [isRecording]);
-
+  // Start recording function
   const startRecording = async () => {
     try {
       setIsConnecting(true);
       setError('');
 
-      // Start speech recognition
-      await recognition.current.start();
-
       // Start audio recording for backend
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream);
       
-      mediaRecorderRef.current.ondataavailable = (event) => {
+      mediaRecorderRef.current.ondataavailable = (event: BlobEvent) => {
         if (event.data.size > 0) {
           audioChunksRef.current.push(event.data);
+          sendAudioToBackend(event.data); // Send the audio chunk as soon as it's available
         }
       };
 
       mediaRecorderRef.current.onstop = async () => {
-        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
-        await sendAudioToBackend(audioBlob);
-        audioChunksRef.current = [];
+        setIsRecording(false);
       };
 
-      mediaRecorderRef.current.start(1000); // Collect audio in 1-second chunks
-
-      // Create a new session
-      const response = await axios.post('https://api.255.uz/transciption/sessions/create');
-      setSessionId(response.data.session_id);
+      mediaRecorderRef.current.start(500); // Collect audio in 0.5-second chunks (for faster real-time updates)
 
       setIsRecording(true);
       setIsConnecting(false);
     } catch (error) {
       console.error('Error starting recording:', error);
-      setError(getErrorMessage(error));
+      setError('Error occurred while starting recording.');
       setIsConnecting(false);
     }
   };
 
+  // Stop recording function
   const stopRecording = async () => {
-    if (recognition.current) {
-      recognition.current.stop();
-    }
-
     if (mediaRecorderRef.current) {
       mediaRecorderRef.current.stop();
-    }
-
-    // End the session
-    if (sessionId) {
-      try {
-        await axios.post(`https://api.255.uz/transciption/sessions/${sessionId}/end`, {
-          final_transcript: transcript
-        });
-      } catch (error) {
-        console.error('Error ending session:', error);
-      }
     }
 
     setIsRecording(false);
   };
 
-  const sendTranscriptionToBackend = async (text, isFinal) => {
-    if (!sessionId) return;
-
-    try {
-      await axios.post('https://api.255.uz/transciption/transcriptions/save', {
-        session_id: sessionId,
-        text,
-        is_final: isFinal
-      });
-    } catch (error) {
-      console.error('Error saving transcription:', error);
-    }
-  };
-
-  const sendAudioToBackend = async (audioBlob) => {
-    if (!sessionId) return;
-
+  // Send audio to backend for transcription
+  const sendAudioToBackend = async (audioBlob: Blob) => {
     const formData = new FormData();
     formData.append('audio', audioBlob, 'recording.webm');
-    formData.append('session_id', sessionId);
 
     try {
-      await axios.post('https://api.255.uz/transciption/audio/upload', formData, {
+      const response = await axios.post('http://localhost:8000/transcribe', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         }
       });
+
+      const { transcription } = response.data;
+      setTranscript(prev => prev + ' ' + transcription);
+      setNewText(transcription);
+      onSpeech(transcription); // Callback to pass the new transcription
     } catch (error) {
-      console.error('Error uploading audio:', error);
+      console.error('Error sending audio:', error);
+      setError('Error occurred while sending audio.');
     }
   };
 
-  const getErrorMessage = (error) => {
-    if (error.error === 'not-allowed' || error.error === 'permission-denied') {
-      return 'Microphone access denied. Please enable it in your settings.';
-    } else if (error.error === 'no-speech') {
-      return 'No speech detected. Please try again.';
-    } else if (error.error === 'audio-capture') {
-      return 'No microphone found. Please check your device settings.';
-    } else if (error.error === 'network') {
-      return 'Network error occurred. Please check your connection.';
-    } else if (error.error === 'aborted') {
-      return 'Recording was aborted. Please try again.';
-    } else {
-      return 'Error occurred. Please try again.';
-    }
-  };
-
+  // Rendering wave animation when recording
   const WaveRings = () => (
     <div className="absolute inset-0 -z-10">
       <div className="absolute inset-0 animate-ping-slow rounded-full border-2 border-red-200 opacity-75" />
@@ -231,7 +142,7 @@ const RealTimeSpeechToText = () => {
         </div>
       </div>
 
-      <div className="border rounded-lg p-4 min-h-40 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
+      {/* <div className="border rounded-lg p-4 min-h-40 bg-white shadow-sm transition-all duration-300 hover:shadow-md">
         <h2 className="text-lg font-semibold mb-2">Real-time Transcript:</h2>
         <p className="whitespace-pre-wrap">
           {transcript}
@@ -241,7 +152,7 @@ const RealTimeSpeechToText = () => {
             </span>
           )}
         </p>
-      </div>
+      </div> */}
     </div>
   );
 };

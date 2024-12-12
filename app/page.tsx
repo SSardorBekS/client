@@ -23,7 +23,7 @@ const LandingPage = () => {
                 <Link href="/login">
                   <Button variant="ghost">Kirish</Button>
                 </Link>
-                <Link href="/register">
+                <Link href="/sign-up">
                   <Button>Ro'yxatdan o'tish</Button>
                 </Link>
               </div>
@@ -46,7 +46,7 @@ const LandingPage = () => {
                   yarating.
                 </p>
                 <div className="flex flex-col sm:flex-row gap-4">
-                  <Link href="/register">
+                  <Link href="/sign-up">
                     <Button size="lg" className="w-full sm:w-auto">
                       Boshlash
                     </Button>
@@ -197,7 +197,7 @@ const LandingPage = () => {
               Bugun boshlaymizmi?
             </h2>
             <div className="flex flex-col sm:flex-row justify-center gap-4">
-              <Link href="/register">
+              <Link href="/sign-up">
                 <Button size="lg" variant="secondary">
                   Ro'yxatdan o'tish
                 </Button>

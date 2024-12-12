@@ -1,6 +1,6 @@
 "use client";
 
-// import { defaultEditorContent } from "@/lib/content";
+import { defaultEditorContent } from "@/lib/content";
 import {
   EditorCommand,
   EditorCommandEmpty,
@@ -13,8 +13,8 @@ import {
 } from "novel";
 import { ImageResizer, handleCommandNavigation } from "novel/extensions";
 import { useEffect, useState } from "react";
-import { useDebouncedCallback } from "use-debounce";
-import { defaultExtensions } from "./extensions";
+// import { useDebouncedCallback } from "use-debounce";
+import { defaultExtensions } from "@/components/editor/extensions";
 import { ColorSelector } from "@/components/selectors/color-selector";
 import { LinkSelector } from "@/components/selectors/link-selector";
 import { NodeSelector } from "@/components/selectors/node-selector";
@@ -22,10 +22,10 @@ import { MathSelector } from "@/components/selectors/math-selector";
 import { Separator } from "@/components/ui/separator";
 
 import { handleImageDrop, handleImagePaste } from "novel/plugins";
-import GenerativeMenuSwitch from "./generative/generative-menu-switch";
-import { uploadFn } from "./image-upload";
-import { TextButtons } from "./selectors/text-buttons";
-import { slashCommand, suggestionItems } from "./slash-command";
+// import GenerativeMenuSwitch from "./generative/generative-menu-switch";
+import { uploadFn } from "@/components/editor/image-upload";
+import { TextButtons } from "../selectors/text-buttons";
+import { slashCommand, suggestionItems } from "@/components/editor/slash-command";
 
 const hljs = require('highlight.js');
 
@@ -52,19 +52,19 @@ const TailwindAdvancedEditor = () => {
     return new XMLSerializer().serializeToString(doc);
   };
 
-  const debouncedUpdates = useDebouncedCallback(async (editor: EditorInstance) => {
-    const json = editor.getJSON();
-    setCharsCount(editor.storage.characterCount.words());
-    window.localStorage.setItem("html-content", highlightCodeblocks(editor.getHTML()));
-    window.localStorage.setItem("novel-content", JSON.stringify(json));
-    window.localStorage.setItem("markdown", editor.storage.markdown.getMarkdown());
-    setSaveStatus("Saved");
-  }, 500);
+  // const debouncedUpdates = useDebouncedCallback(async (editor: EditorInstance) => {
+  //   const json = editor.getJSON();
+  //   setCharsCount(editor.storage.characterCount.words());
+  //   window.localStorage.setItem("html-content", highlightCodeblocks(editor.getHTML()));
+  //   window.localStorage.setItem("novel-content", JSON.stringify(json));
+  //   window.localStorage.setItem("markdown", editor.storage.markdown.getMarkdown());
+  //   setSaveStatus("Saved");
+  // }, 500);
 
   useEffect(() => {
     const content = window.localStorage.getItem("novel-content");
     if (content) setInitialContent(JSON.parse(content));
-    // else setInitialContent(defaultEditorContent);
+    else setInitialContent(defaultEditorContent);
   }, []);
 
   if (!initialContent) return null;
@@ -94,7 +94,7 @@ const TailwindAdvancedEditor = () => {
             },
           }}
           onUpdate={({ editor }) => {
-            debouncedUpdates(editor);
+            // debouncedUpdates(editor);
             setSaveStatus("Unsaved");
           }}
           slotAfter={<ImageResizer />}
@@ -121,7 +121,7 @@ const TailwindAdvancedEditor = () => {
             </EditorCommandList>
           </EditorCommand>
 
-          <GenerativeMenuSwitch open={openAI} onOpenChange={setOpenAI}>
+          {/* <GenerativeMenuSwitch open={openAI} onOpenChange={setOpenAI}>
             <Separator orientation="vertical" />
             <NodeSelector open={openNode} onOpenChange={setOpenNode} />
             <Separator orientation="vertical" />
@@ -133,7 +133,7 @@ const TailwindAdvancedEditor = () => {
             <TextButtons />
             <Separator orientation="vertical" />
             <ColorSelector open={openColor} onOpenChange={setOpenColor} />
-          </GenerativeMenuSwitch>
+          </GenerativeMenuSwitch> */}
         </EditorContent>
       </EditorRoot>
     </div>

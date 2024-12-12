@@ -105,7 +105,7 @@ export const PricingSection = () => {
                 </ul>
 
                 <div className="mt-8">
-                  <Link href="/register">
+                  <Link href="/sign-up">
                     <Button
                       variant={plan.popular ? 'default' : 'outline'}
                       className="w-full"
